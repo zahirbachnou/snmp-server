@@ -30,6 +30,8 @@ class Informations(Resource):
             else:
                 for varBind in varBinds:  # SNMP response contents
                     print(' = '.join([x.prettyPrint() for x in varBind]))
+                    res = [x.prettyPrint() for x in varBind]
+        return {res[0]: res[1]}
 
 api.add_resource(HelloWorld, '/')
 api.add_resource(Informations, '/informations/<string:ipaddress>/<string:oid>/<string:community>')
