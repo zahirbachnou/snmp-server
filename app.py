@@ -1,11 +1,57 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_restful import Resource, Api, reqparse
 from flask_cors import CORS
 from pysnmp.hlapi import *
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 app = Flask(__name__)
 api = Api(app)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///clients.db'
+
+#Initialize the database
+db = SQLAlchemy(app)
+
+#Create database model
+class Clients(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+
+    #Create a function to return a string when we add something
+    def __repr__(self):
+        return '<Name %r>' % self.id
+
+class AddClient(Resource):
+
+    def post(self, client):
+        new_client = Clients(name=client)
+
+        #Push to Database
+        try:
+            db.session.add(new_client)
+            db.session.commit()
+        except:
+            return "There was an error adding your client."
+
+class ShowClients(Resource):
+
+    def get(self):
+        res = {}
+        clients = Clients.query.all()
+        #cpt = 0
+        for cl in clients:
+            print(cl.name)
+            res[cl.id] = cl.name
+            #cpt = cpt + 1
+        return res
+
+class DeleteClients(Resource):
+    def delete(self, id):
+        Clients.query.filter(Clients.id == id).delete()
+        db.session.commit()
+        return 'Delete done !'
 
 class HelloWorld(Resource):
     def get(self):
@@ -35,6 +81,9 @@ class Informations(Resource):
 
 api.add_resource(HelloWorld, '/')
 api.add_resource(Informations, '/informations/<string:ipaddress>/<string:oid>/<string:community>')
+api.add_resource(AddClient, '/addclient/<string:client>')
+api.add_resource(ShowClients, '/showclients')
+api.add_resource(DeleteClients, '/deleteclients/<int:id>')
 
 if __name__ == "__main__":
     app.run()
