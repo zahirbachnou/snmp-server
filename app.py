@@ -17,6 +17,8 @@ db = SQLAlchemy(app)
 class Clients(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
+    ip = db.Column(db.String(200), nullable=False)
+    marque = db.Column(db.String(200), nullable=False)
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
 
     #Create a function to return a string when we add something
@@ -25,13 +27,14 @@ class Clients(db.Model):
 
 class AddClient(Resource):
 
-    def post(self, client):
-        new_client = Clients(name=client)
+    def post(self, client, ip, marque):
+        new_client = Clients(name=client, ip=ip, marque=marque)
 
         #Push to Database
         try:
             db.session.add(new_client)
             db.session.commit()
+            return 'Client was successfuly added !'
         except:
             return "There was an error adding your client."
 
@@ -42,12 +45,12 @@ class ShowClients(Resource):
         clients = Clients.query.all()
         #cpt = 0
         for cl in clients:
-            print(cl.name)
+            print(cl.name+' '+cl.ip+' '+cl.marque)
             res[cl.id] = cl.name
             #cpt = cpt + 1
         return res
 
-class DeleteClients(Resource):
+class DeleteClient(Resource):
     def delete(self, id):
         Clients.query.filter(Clients.id == id).delete()
         db.session.commit()
@@ -81,9 +84,9 @@ class Informations(Resource):
 
 api.add_resource(HelloWorld, '/')
 api.add_resource(Informations, '/informations/<string:ipaddress>/<string:oid>/<string:community>')
-api.add_resource(AddClient, '/addclient/<string:client>')
+api.add_resource(AddClient, '/addclient/<string:client>/<string:ip>/<string:marque>')
 api.add_resource(ShowClients, '/showclients')
-api.add_resource(DeleteClients, '/deleteclients/<int:id>')
+api.add_resource(DeleteClient, '/deleteclient/<int:id>')
 
 if __name__ == "__main__":
     app.run()
